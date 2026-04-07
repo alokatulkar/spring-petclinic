@@ -6,6 +6,8 @@ pipeline {
         EKS_CLUSTER = "ekscluster"
         DOCKER_IMAGE = "yourdockerhub/petclinic"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
     tools {
@@ -14,27 +16,17 @@ pipeline {
 
     stages {
 
-    stages {
+        stage('Debug Java & Maven') {
+            steps {
+                sh '''
+                echo "===== JAVA VERSION ====="
+                java -version
 
-    stage('Debug Java & Maven') {
-        steps {
-            sh '''
-            echo "===== JAVA VERSION ====="
-            java -version
-
-            echo "===== MAVEN VERSION ====="
-            mvn -version
-            '''
+                echo "===== MAVEN VERSION ====="
+                mvn -version
+                '''
+            }
         }
-    }
-
-    stage('Build Application') {
-        steps {
-            sh 'mvn clean package -DskipTests'
-        }
-    }
-}
-
 
         stage('Build Application') {
             steps {
@@ -48,7 +40,7 @@ pipeline {
             }
         }
 
-        stage('Login to DockerHub') {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-creds',
@@ -68,29 +60,21 @@ pipeline {
             }
         }
 
-        stage('Update kubeconfig') {
+        stage('Deploy to EKS') {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds'
                 ]]) {
                     sh '''
-                    aws eks update-kubeconfig \
-                    --region $AWS_REGION \
-                    --name $EKS_CLUSTER
+                    aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+
+                    sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" k8s/petclinic.yml
+
+                    kubectl apply -f k8s/db.yml
+                    kubectl apply -f k8s/petclinic.yml
                     '''
                 }
-            }
-        }
-
-        stage('Deploy to EKS') {
-            steps {
-                sh '''
-                sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" k8s/deployment.yaml
-
-                kubectl apply -f k8s/deployment.yaml
-                kubectl apply -f k8s/service.yaml
-                '''
             }
         }
     }
