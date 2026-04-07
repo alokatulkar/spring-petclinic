@@ -16,7 +16,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/spring-projects/spring-petclinic.git'
+                git 'https://github.com/alokatulkar/spring-petclinic'
             }
         }
 
