@@ -14,11 +14,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/alokatulkar/spring-petclinic'
-            }
-        }
 
         stage('Build Application') {
             steps {
