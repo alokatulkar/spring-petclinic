@@ -14,6 +14,27 @@ pipeline {
 
     stages {
 
+    stages {
+
+    stage('Debug Java & Maven') {
+        steps {
+            sh '''
+            echo "===== JAVA VERSION ====="
+            java -version
+
+            echo "===== MAVEN VERSION ====="
+            mvn -version
+            '''
+        }
+    }
+
+    stage('Build Application') {
+        steps {
+            sh 'mvn clean package -DskipTests'
+        }
+    }
+}
+
 
         stage('Build Application') {
             steps {
