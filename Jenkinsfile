@@ -4,10 +4,8 @@ pipeline {
     environment {
         AWS_REGION = "ap-south-1"
         EKS_CLUSTER = "ekscluster"
-        DOCKER_IMAGE = "yourdockerhub/petclinic"
+        DOCKER_IMAGE = "alokatulkar/petclinic"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
     tools {
@@ -16,21 +14,31 @@ pipeline {
 
     stages {
 
-        stage('Debug Java & Maven') {
+        stage('Debug Environment') {
             steps {
                 sh '''
                 echo "===== JAVA VERSION ====="
-                java -version
+                java -version || true
 
                 echo "===== MAVEN VERSION ====="
-                mvn -version
+                mvn -version || true
                 '''
             }
         }
 
         stage('Build Application') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh '''
+                # Force correct Java (fix for your error)
+                export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+                export PATH=$JAVA_HOME/bin:$PATH
+
+                echo "===== USING JAVA ====="
+                java -version
+                mvn -version
+
+                mvn clean package -DskipTests
+                '''
             }
         }
 
@@ -69,10 +77,14 @@ pipeline {
                     sh '''
                     aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
+                    # Replace image tag dynamically
                     sed -i "s|IMAGE_TAG|$IMAGE_TAG|g" k8s/petclinic.yml
 
                     kubectl apply -f k8s/db.yml
                     kubectl apply -f k8s/petclinic.yml
+
+                    kubectl get pods
+                    kubectl get svc
                     '''
                 }
             }
