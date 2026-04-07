@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = "ap-south-1"
         EKS_CLUSTER = "ekscluster"
-        DOCKER_IMAGE = "alokatulkar/petclinic"
+        DOCKER_IMAGE = "alok2804/petclinic"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
