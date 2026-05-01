@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = "ap-south-1"
         EKS_CLUSTER = "ekscluster"
-        DOCKER_IMAGE = "alok2804/petclinic"
+        ECR_REPO = "612915905322.dkr.ecr.ap-south-1.amazonaws.com/petclinic"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
@@ -20,21 +20,21 @@ pipeline {
             steps {
                 sh '''
                 echo "Building Docker Image..."
-                docker build -t $DOCKER_IMAGE:$IMAGE_TAG .
+                docker build -t $ECR_REPO:$IMAGE_TAG .
                 '''
             }
         }
 
-        stage('Docker Login') {
+        stage('Login to ECR') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
                     sh '''
-                    echo "Logging into DockerHub..."
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    echo "Logging into ECR..."
+                    aws ecr get-login-password --region $AWS_REGION | \
+                    docker login --username AWS --password-stdin $ECR_REPO
                     '''
                 }
             }
@@ -43,8 +43,8 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 sh '''
-                echo "Pushing Docker Image..."
-                docker push $DOCKER_IMAGE:$IMAGE_TAG
+                echo "Pushing Docker Image to ECR..."
+                docker push $ECR_REPO:$IMAGE_TAG
                 '''
             }
         }

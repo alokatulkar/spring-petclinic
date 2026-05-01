@@ -130,7 +130,7 @@ resource "aws_instance" "jenkins" {
 
 # ---------------- IAM FOR EKS ----------------
 resource "aws_iam_role" "eks_role" {
-  name = "eks-role-final"
+  name = "eks-role-final4"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -162,7 +162,7 @@ resource "aws_eks_cluster" "eks" {
 
 # ---------------- NODE ROLE ----------------
 resource "aws_iam_role" "node_role" {
-  name = "eks-node-role-final"
+  name = "eks-node-role-final4"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
