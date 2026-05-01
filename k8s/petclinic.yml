@@ -31,34 +31,43 @@ spec:
       containers:
         - name: workload
           image: 612915905322.dkr.ecr.ap-south-1.amazonaws.com/petclinic:IMAGE_TAG
+          
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
-            - name: SERVICE_BINDING_ROOT
-              value: /bindings
+
             - name: SPRING_APPLICATION_JSON
               value: |
                 {
                   "management.endpoint.health.probes.add-additional-paths": true
                 }
+
+            # ✅ DB CONFIG (FIXED)
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://demo-db:5432/petclinic
+
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: demo-db
+                  key: username
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: demo-db
+                  key: password
+
           ports:
             - name: http
               containerPort: 8080
+
           livenessProbe:
             httpGet:
               path: /livez
               port: http
+
           readinessProbe:
             httpGet:
               path: /readyz
               port: http
-          volumeMounts:
-            - mountPath: /bindings/secret
-              name: binding
-              readOnly: true
-      volumes:
-        - name: binding
-          projected:
-            sources:
-              - secret:
-                  name: demo-db
